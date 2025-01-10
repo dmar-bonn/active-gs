@@ -4,6 +4,12 @@ Liren Jin<sup>1</sup>, Xingguang Zhong<sup>1</sup>, Yue Pan<sup>1</sup>, Jens Be
 
 <sup>1</sup> University of Bonn, <sup>2</sup> TU Delft
 
+<a target="_blank" href="https://arxiv.org/abs/2412.17769">
+    <img src="https://img.shields.io/badge/arXiv-2412.17769-b31b1b.svg" alt="arXiv Paper">
+</a>
+
+code will be released in Feburary, 2025.
+
 ![teaser](https://github.com/user-attachments/assets/f7c16143-fc3c-4d69-88f3-f7bd43d9de85)
 
 ## Demo
