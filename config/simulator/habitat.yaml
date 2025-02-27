@@ -1,0 +1,14 @@
+physics:
+  enable: false
+  gravity: [0.0, 0.0, -10.0]
+
+sensor:
+  sensor_type: [color, depth]
+  fps: 20
+  resolution: [512, 512] # H W
+  fov: [60, 60] # v h
+  position: [0.0, 0.0, 0.0]
+  orientation: [0.0, 0.0, 0.0] # 90 degrees as one unit
+  normalize: true
+  depth_noise_co: 0.01
+  depth_range: [0.0, 5.0]

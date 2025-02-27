@@ -1,0 +1,4 @@
+scene_name: replica/office4
+mesh_path: data/replica_v1/office_4/mesh.ply
+scene_id: data/replica_v1/office_4/habitat/replicaSDK_stage.stage_config.json
+has_missing_surface: false

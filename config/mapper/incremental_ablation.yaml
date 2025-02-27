@@ -1,0 +1,37 @@
+# mapper setup
+use_voxel_filter: False
+
+# for voxel map
+voxel_map:
+  safety_margin: 0.3
+  map_resolution: [0.2, 0.2, 0.2]
+  min_gaussian_per_voxel: 5
+
+# for gaussian map
+gaussian_map:
+  bound: [0.001, 10.0]
+  background: [0.0, 0.0, 0.0, 0.0]
+  sparse_ratio: 0.1
+  error_thres: 0.25
+  scale_factor: 0.01
+  optimization_steps: 10
+  prune_interval: 5
+  use_view_distribution: False
+
+  sampler:
+    sampler_type: weighted
+    batch_size: 8
+    active_size: 3
+    
+  optimizer:
+    mean_lr: 0.0005
+    rotation_lr: 0.0005
+    opacity_lr: 0.01
+    scale_lr : 0.01
+    harmonic_lr: 0.0001
+    ssim_weight: 0.2
+    geo_weight: 1
+    op_weight: 0.5
+    scale_weight: 0.5
+    grad_thres: 1.0e-4
+    op_thres: 0.5

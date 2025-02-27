@@ -1,0 +1,22 @@
+defaults:
+  - planner: random
+  - simulator: habitat
+  - scene: replica/office0
+  - override hydra/hydra_logging: disabled  
+  - override hydra/job_logging: disabled  
+
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .
+
+experiment:
+  output_dir: ./experiments
+  exp_id: test
+  run_id : 0
+
+test_folder: null # must be provided at run time
+eval_mode: "complete" # rendering or mesh
+
+
+

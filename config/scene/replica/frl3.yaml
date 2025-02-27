@@ -1,0 +1,4 @@
+scene_name: replica/frl3
+mesh_path: data/replica_v1/frl_apartment_3/mesh.ply
+scene_id: data/replica_v1/frl_apartment_3/habitat/replicaSDK_stage.stage_config.json
+has_missing_surface: true

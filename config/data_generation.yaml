@@ -1,0 +1,31 @@
+defaults:
+  - planner: random
+  - simulator: habitat
+  - scene: replica/office0
+  - mapper: incremental
+  - gui: gui
+  - override hydra/hydra_logging: disabled  
+  - override hydra/job_logging: disabled  
+
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .
+
+use_gui: false
+save_pose_only: false
+max_iter: 1000
+converged_step: 20
+num_views: 1000
+dataset_path: ./dataset
+
+########## overwrite default setting ########## 
+########## for data generatinon only ##########
+mapper:
+  map_resolution: [0.2, 0.2, 0.2]
+  safety_margin: 0.3
+  min_gaussian_per_voxel: 5
+
+simulator:
+  sensor:
+      depth_noise_co: 0.0

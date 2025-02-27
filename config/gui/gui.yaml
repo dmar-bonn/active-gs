@@ -1,0 +1,5 @@
+resolution_win: [1200, 2100]
+resolution_render: [512, 512]
+bound: [0.1, 10.0] 
+background: [0.0, 0.0, 0.0, 1.0]
+fov: [60, 60]

@@ -1,0 +1,12 @@
+planner_name: random
+type: random
+radius: 0.5 # action space radius in meters
+init_pose: [[0, 0, 1, 0], [-1, 0, 0, 0], [0, -1, 0, 0], [0, 0, 0, 1]] # opencv camera in world coordiante
+robot_size: 0.3
+
+### sampling related
+pitch_angle: null
+sample_num: 100
+max_roi_sample_num: 0
+use_confidence: false
+path_length_factor: 0.0
