@@ -18,10 +18,6 @@ import math
 import open3d as o3d
 import pdb
 
-# from diff_gaussian_rasterization import (
-#     GaussianRasterizationSettings,
-#     GaussianRasterizer,
-# )
 
 from diff_gaussian_rasterization_2d import (
     GaussianRasterizationSettings,

@@ -188,6 +188,7 @@ point_clouds*
 *.png
 *.th
 *.txt
+!requirements.txt
 *.ply
 *.obj
 *.pkl
