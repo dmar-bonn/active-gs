@@ -11,7 +11,7 @@ Liren Jin<sup>1</sup>, Xingguang Zhong<sup>1</sup>, Yue Pan<sup>1</sup>, Jens Be
 
 ![teaser](https://github.com/user-attachments/assets/f7c16143-fc3c-4d69-88f3-f7bd43d9de85)
 ## Setup
-We test the following setup on Ubuntu20 with CUDA11.3
+We test the following setup on Ubuntu20 with CUDA11.8
 
 Clone ActiveGS repo:
 ```
