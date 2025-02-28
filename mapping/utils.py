@@ -1,31 +1,10 @@
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
-from math import exp
 import numpy as np
-import json
-import cv2
-import pdb
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
-import os
 import torchmetrics
-
-# from utils.operations import render_cuda, build_covariance
-from tqdm import tqdm
 import math
-from dataclasses import dataclass
-from jaxtyping import Float
-from torch import Tensor
-
-
-@dataclass
-class Gaussians:
-    means: Float[Tensor, "*batch 3"]
-    scales: Float[Tensor, "*batch 3"]
-    rotations: Float[Tensor, "*batch 4"]
-    harmonics: Float[Tensor, "*batch 3 _"]
-    opacities: Float[Tensor, " *batch"]
-    variances: Float[Tensor, " *batch"]
 
 
 def _tensor_size(t):
@@ -126,16 +105,7 @@ def scale_loss_fc(scales):
     scale_mean = torch.mean(scales[..., :2], dim=-1, keepdim=True)
     scale_diff = torch.mean(torch.abs(scales[..., :2] - scale_mean))
     scale_loss = torch.mean(scale_diff)
-    # max_scale, _ = torch.max(scales, dim=-1)
-    # min_scale, _ = torch.min(scales, dim=-1)
-    # scale_ratio = min_scale / (max_scale + 1.0e-8)
-    # scale_loss = torch.mean(1 - scale_ratio)
     return scale_loss
-
-
-# def op_loss_fc(opacities):
-#     op_loss = torch.mean(1 - opacities)
-#     return op_loss
 
 
 def op_loss_fc(opacities, confidences):
@@ -143,13 +113,7 @@ def op_loss_fc(opacities, confidences):
     return loss.mean()
 
 
-# def op_loss_fc(opacities):
-#     op_loss = torch.exp(-((opacities - 0.5) ** 2) / 0.05).mean()
-#     return op_loss
-
-
 def l1_loss_fc(network_output, gt):
-    # valid_mask = gt > 0.0
     return torch.abs((network_output - gt)).mean()
 
 
@@ -164,7 +128,7 @@ def l2_loss_fc(network_output, gt):
 def gaussian(window_size, sigma):
     gauss = torch.Tensor(
         [
-            exp(-((x - window_size // 2) ** 2) / float(2 * sigma**2))
+            math.exp(-((x - window_size // 2) ** 2) / float(2 * sigma**2))
             for x in range(window_size)
         ]
     )
@@ -323,160 +287,6 @@ def cal_lpips(rgb_pred, rgb_gt):
     lpips = lpips_cal(rgb_pred, rgb_gt).item()
     return lpips
 
-    # @torch.no_grad()
-    # def eval_rendering(gaussians, dataset, kf_indices, cfg, device, save_dir=None):
-    #     interval = 5
-
-    #     background_color = torch.tensor(
-    #         torch.tensor([0.0, 0.0, 0.0]), dtype=torch.float32
-    #     ).to(device)
-    #     near, far = cfg.mapper.bound
-    #     img_pred, img_gt, test_frame_idx = [], [], []
-    #     end_idx = len(dataset)
-    #     psnr_array, ssim_array, lpips_array = [], [], []
-    #     covariances = build_covariance(gaussians.scales, gaussians.rotations)
-
-    #     for idx in range(0, end_idx, interval):
-    #         if idx in kf_indices:
-    #             continue
-    #         test_frame_idx.append(idx)
-
-    #     for idx in tqdm(test_frame_idx):
-    #         dataframe = dataset[idx]
-    #         rgb_gt = dataframe["rgb"]
-    #         depth_gt = dataframe["depth"]
-    #         extrinsic = dataframe["extrinsic"]
-    #         intrinsic = dataframe["intrinsic"]
-
-    #         rgb, depth, normal, opacity, uncertainty, importance_score, _ = render_cuda(
-    #             extrinsic.unsqueeze(0).to(device),
-    #             intrinsic.unsqueeze(0).to(device),
-    #             torch.tensor([near]).to(device),
-    #             torch.tensor([far]).to(device),
-    #             cfg.mapper.resolution,
-    #             background_color,
-    #             gaussians.means,
-    #             covariances,
-    #             gaussians.harmonics,
-    #             gaussians.opacities,
-    #             gaussians.variances,
-    #         )
-    #         rgb_pred = torch.clamp(rgb.detach(), 0.0, 1.0)
-    #         rgb_gt = rgb_gt.unsqueeze(0)
-
-    #         psnr_score = cal_psnr(rgb_pred, rgb_gt)
-    #         ssim_score = cal_ssim(rgb_pred, rgb_gt)
-    #         lpips_score = cal_lpips(rgb_pred, rgb_gt)
-
-    #         psnr_array.append(psnr_score)
-    #         ssim_array.append(ssim_score)
-    #         lpips_array.append(lpips_score)
-
-    #     output = dict()
-    #     output["mean_psnr"] = float(np.mean(psnr_array))
-    #     output["mean_ssim"] = float(np.mean(ssim_array))
-    #     output["mean_lpips"] = float(np.mean(lpips_array))
-    #     print(output)
-
-    # Log(
-    #     f'mean psnr: {output["mean_psnr"]}, ssim: {output["mean_ssim"]}, lpips: {output["mean_ssim"]}',
-    #     tag="Eval",
-    # )
-
-    # psnr_save_dir = os.path.join(save_dir, "psnr", str(iteration))
-    # mkdir_p(psnr_save_dir)
-
-    # if save_dir is not None:
-    #     json.dump(
-    #         output,
-    #         open(os.path.join(save_dir, "final_result.json"), "w", encoding="utf-8"),
-    #         indent=4,
-    #     )
-    # return output
-
 
 def cal_distance(points, origin):
     return torch.sqrt(torch.sum((points - origin) ** 2, dim=-1) + 1e-8)
-
-
-def init_uncertainty(depth, normal):
-    depth_factor = torch.exp(depth) * 0.001
-    normal_factor = (
-        1 + F.cosine_similarity(normal.view(-1, 3), torch.tensor([[0, 0, 1]])) * 0.01
-    )
-    # pdb.set_trace()
-    return depth_factor.view(-1) + normal_factor - 1
-
-
-def bresenham_3d_batch(starting_voxels, ending_voxels):
-    x1, y1, z1 = starting_voxels[:, 0], starting_voxels[:, 1], starting_voxels[:, 2]
-    x2, y2, z2 = ending_voxels[:, 0], ending_voxels[:, 1], ending_voxels[:, 2]
-
-    # Calculate deltas
-    dx = torch.abs(x2 - x1)
-    dy = torch.abs(y2 - y1)
-    dz = torch.abs(z2 - z1)
-
-    # Determine the step directions
-    sx = torch.sign(x2 - x1)
-    sy = torch.sign(y2 - y1)
-    sz = torch.sign(z2 - z1)
-
-    # Initialize lists to collect all points
-    points_x, points_y, points_z = [], [], []
-
-    # Initialize error terms
-    err1 = torch.zeros_like(dx)
-    err2 = torch.zeros_like(dx)
-
-    # Select the dominant direction to iterate over
-    cond1 = (dx >= dy) & (dx >= dz)
-    cond2 = (dy >= dx) & (dy >= dz)
-
-    while True:
-        # Collect the current points
-        points_x.append(x1)
-        points_y.append(y1)
-        points_z.append(z1)
-
-        # Identify the indices where lines are completed
-        completed = (x1 == x2) & (y1 == y2) & (z1 == z2)
-        if torch.all(completed):
-            break
-
-        # Update points based on which condition they satisfy
-        err1[cond1] += 2 * dy[cond1]
-        err2[cond1] += 2 * dz[cond1]
-        x1[cond1] += sx[cond1]
-        y1[cond1][err1[cond1] > dx[cond1]] += sy[cond1][err1[cond1] > dx[cond1]]
-        err1[cond1][err1[cond1] > dx[cond1]] -= 2 * dx[cond1][err1[cond1] > dx[cond1]]
-        z1[cond1][err2[cond1] > dx[cond1]] += sz[cond1][err2[cond1] > dx[cond1]]
-        err2[cond1][err2[cond1] > dx[cond1]] -= 2 * dx[cond1][err2[cond1] > dx[cond1]]
-
-        err1[cond2] += 2 * dx[cond2]
-        err2[cond2] += 2 * dz[cond2]
-        y1[cond2] += sy[cond2]
-        x1[cond2][err1[cond2] > dy[cond2]] += sx[cond2][err1[cond2] > dy[cond2]]
-        err1[cond2][err1[cond2] > dy[cond2]] -= 2 * dy[cond2][err1[cond2] > dy[cond2]]
-        z1[cond2][err2[cond2] > dy[cond2]] += sz[cond2][err2[cond2] > dy[cond2]]
-        err2[cond2][err2[cond2] > dy[cond2]] -= 2 * dy[cond2][err2[cond2] > dy[cond2]]
-
-        err1[~cond1 & ~cond2] += 2 * dy[~cond1 & ~cond2]
-        err2[~cond1 & ~cond2] += 2 * dx[~cond1 & ~cond2]
-        z1[~cond1 & ~cond2] += sz[~cond1 & ~cond2]
-        y1[~cond1 & ~cond2][err1[~cond1 & ~cond2] > dz[~cond1 & ~cond2]] += sy[
-            ~cond1 & ~cond2
-        ][err1[~cond1 & ~cond2] > dz[~cond1 & ~cond2]]
-        err1[~cond1 & ~cond2][err1[~cond1 & ~cond2] > dz[~cond1 & ~cond2]] -= (
-            2 * dz[~cond1 & ~cond2][err1[~cond1 & ~cond2] > dz[~cond1 & ~cond2]]
-        )
-        x1[~cond1 & ~cond2][err2[~cond1 & ~cond2] > dz[~cond1 & ~cond2]] += sx[
-            ~cond1 & ~cond2
-        ][err2[~cond1 & ~cond2] > dz[~cond1 & ~cond2]]
-        err2[~cond1 & ~cond2][err2[~cond1 & ~cond2] > dz[~cond1 & ~cond2]] -= (
-            2 * dz[~cond1 & ~cond2][err2[~cond1 & ~cond2] > dz[~cond1 & ~cond2]]
-        )
-
-    return torch.stack(
-        [torch.stack(points_x), torch.stack(points_y), torch.stack(points_z)], dim=-1
-    )

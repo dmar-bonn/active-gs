@@ -39,7 +39,7 @@ python main.py planner=PLANNER_TYPE scene=SCENE_NAME
 If use_gui is set to true, you should be able to see a GUI running.
 
 
-For visualizing the built GS map:
+To visualize the built GS map:
 ```
 python visualize.py -G PATH_TO_GS_MAP
 ```

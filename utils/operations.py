@@ -56,31 +56,6 @@ def voxel_filter(dense_pcd):
     return downsampled_pcd
 
 
-def calc_3d_mesh_metric_new(mesh_rec, mesh_gt):
-    """
-    3D reconstruction metric.
-
-    """
-
-    rec_pc = trimesh.sample.sample_surface(mesh_rec, 1000000)
-    rec_pc = np.array(rec_pc[0])
-    rec_pc_ds = voxel_filter(rec_pc)
-    # rec_pc_tri = trimesh.PointCloud(vertices=rec_pc_ds)
-
-    gt_pc = trimesh.sample.sample_surface(mesh_gt, 1000000)
-    gt_pc = np.array(gt_pc[0])
-    gt_pc_ds = voxel_filter(gt_pc)
-    # gt_pc_tri = trimesh.PointCloud(vertices=gt_pc_ds)
-    accuracy_rec = accuracy(gt_pc_ds, rec_pc_ds)
-    completion_rec = completion(gt_pc_ds, rec_pc_ds)
-    completion_ratio_rec = completion_ratio(gt_pc_ds, rec_pc_ds)
-    accuracy_rec *= 100  # convert to cm
-    completion_rec *= 100  # convert to cm
-    completion_ratio_rec *= 100  # convert to %
-
-    return accuracy_rec, completion_rec, completion_ratio_rec
-
-
 def calc_3d_mesh_metric(mesh_rec, mesh_gt, align=False, dist_thres=0.05):
     """
     3D reconstruction metric.
@@ -95,7 +70,7 @@ def calc_3d_mesh_metric(mesh_rec, mesh_gt, align=False, dist_thres=0.05):
 
     accuracy_rec = accuracy(gt_pc_tri.vertices, rec_pc_tri.vertices)
     completion_rec = completion(gt_pc_tri.vertices, rec_pc_tri.vertices)
-    chamfer_dist = (accuracy_rec + completion_rec) / 2 
+    chamfer_dist = (accuracy_rec + completion_rec) / 2
     completion_ratio_rec = completion_ratio(
         gt_pc_tri.vertices, rec_pc_tri.vertices, dist_th=dist_thres
     )
@@ -150,51 +125,6 @@ def normal2curv(normal, mask):
     return curv
 
 
-# def random_rotation(n, roll_pitch_yaw, opencv=True):
-#     roll, pitch, yaw = roll_pitch_yaw
-#     if roll is None:
-#         random_z_rot = np.random.uniform(0, 2 * np.pi, n)
-#     else:
-#         random_z_rot = np.ones(n) * roll
-
-#     if pitch is None:
-#         random_x_rot = np.random.uniform(-0.5 * np.pi, 0.5 * np.pi, n)
-#     else:
-#         random_x_rot = np.ones(n) * pitch
-
-
-#     if yaw is None:
-#         random_y_rot = np.random.uniform(0, 2 * np.pi, n)
-#     else:
-#         random_y_rot = np.one(n) * yaw
-#     eulers = np.stack((random_z_rot, random_x_rot, random_y_rot), axis=-1)
-#     rotation_matrix = R.from_euler("zxy", eulers).as_matrix()
-#     if opencv:
-#         rotation_matrix = opencv_rotation @ rotation_matrix
-#     return rotation_matrix
-
-
-# def decode_rotation_from_z(z_axis_batch, roll_pitch_yaw, opencv=True):
-#     roll, pitch, yaw = roll_pitch_yaw
-#     n = len(z_axis_batch)
-#     z_axis_batch = z_axis_batch.numpy()
-#     if roll is None:
-#         z_rot = np.random.uniform(0, 2 * np.pi, n)
-#     else:
-#         z_rot = np.ones(n) * roll
-
-#     x_rot = np.arcsin(np.clip(z_axis_batch[:, 2], -1.0, 1.0))
-#     y_rot = np.arctan2(z_axis_batch[:, 1], z_axis_batch[:, 0])
-#     eulers = np.stack((z_rot, x_rot, y_rot), axis=-1)
-#     # pdb.set_trace()
-#     rotation_matrix = R.from_euler("zxy", eulers).as_matrix()
-
-#     if opencv:
-#         rotation_matrix = opencv_rotation @ rotation_matrix
-
-#     return torch.tensor(rotation_matrix)
-
-
 def random_rotation(n, pitch_angle, opencv=True):
     points = np.random.randn(n, 3)  # Sample from normal distribution
     points = points / np.clip(np.linalg.norm(points, axis=1, keepdims=True), 1e-8, None)
@@ -215,52 +145,6 @@ def random_rotation(n, pitch_angle, opencv=True):
     return rotation_matrix
 
 
-# def random_point_in_sphere(radius, n):
-#     # Generate a random radius r
-#     u1 = np.random.uniform(0, 1, n)
-#     r = radius * np.cbrt(u1)
-
-#     # Generate random angles theta and phi
-#     u2 = np.random.uniform(0, 1, n)
-#     theta = 2 * np.pi * u2
-
-#     u3 = np.random.uniform(0, 1, n)
-#     phi = np.arccos(2 * u3 - 1)
-
-#     # Convert spherical coordinates to Cartesian coordinates
-#     x = r * np.sin(phi) * np.cos(theta)
-#     y = r * np.sin(phi) * np.sin(theta)
-#     z = r * np.cos(phi)
-
-#     return np.stack((x, y, z), axis=-1)
-
-
-def convert_poses(
-    poses: Float[Tensor, "batch 18"],
-) -> tuple[
-    Float[Tensor, "batch 4 4"],  # extrinsics
-    Float[Tensor, "batch 3 3"],  # intrinsics
-]:
-    """convert replica formate pose to 4x4 matrix"""
-
-    b, _ = poses.shape
-
-    # Convert the intrinsics to a 3x3 normalized K matrix.
-    intrinsics = torch.eye(3, dtype=torch.float32)
-    intrinsics = repeat(intrinsics, "h w -> b h w", b=b).clone()
-    fx, fy, cx, cy = poses[:, :4].T
-    intrinsics[:, 0, 0] = fx
-    intrinsics[:, 1, 1] = fy
-    intrinsics[:, 0, 2] = cx
-    intrinsics[:, 1, 2] = cy
-
-    # Convert the extrinsics to a 4x4 OpenCV-style W2C matrix.
-    w2c = repeat(torch.eye(4, dtype=torch.float32), "h w -> b h w", b=b).clone()
-    w2c[:, :3] = rearrange(poses[:, 6:], "b (h w) -> b h w", h=3, w=4)
-    # return w2c.inverse(), intrinsics
-    return w2c, intrinsics
-
-
 def clone_obj(obj):
     clone_obj = copy.deepcopy(obj)
     for attr in clone_obj.__dict__.keys():
@@ -276,39 +160,6 @@ def clone_obj(obj):
 
 def fov2focal(fov, pixels):
     return pixels / (2 * math.tan(fov / 2))
-
-
-# def depth2normal(depth_map):
-#     """generate normal map from depth image"""
-#     _, h, w = depth_map.shape
-#     depth_map = depth_map.unsqueeze(1)
-#     device = depth_map.device
-#     delzdelxkernel = torch.tensor(
-#         [
-#             [0.00000, 0.00000, 0.00000],
-#             [-1.00000, 0.00000, 1.00000],
-#             [0.00000, 0.00000, 0.00000],
-#         ]
-#     )
-#     delzdelxkernel = delzdelxkernel.view(1, 1, 3, 3).to(device)
-#     delzdelx = F.conv2d(depth_map, delzdelxkernel, padding="same")
-
-#     delzdelykernel = torch.tensor(
-#         [
-#             [0.00000, -1.00000, 0.00000],
-#             [0.00000, 0.00000, 0.00000],
-#             [0.0000, 1.00000, 0.00000],
-#         ]
-#     )
-#     delzdelykernel = delzdelykernel.view(1, 1, 3, 3).to(device)
-
-#     delzdely = F.conv2d(depth_map, delzdelykernel, padding="same")
-
-#     delzdelz = torch.ones(delzdely.shape, dtype=torch.float64).to(device)
-#     # print('kernel',delzdelx.shape)
-#     surface_norm = torch.stack((-2 * delzdelx, -2 * delzdely, delzdelz), 2)
-#     surface_norm = torch.div(surface_norm, norm(surface_norm, dim=2)[:, :, None, :, :])
-#     return surface_norm.view(-1, h, w)
 
 
 def get_smooth_depth(depth, tolerance=0.5):
@@ -431,31 +282,6 @@ def quaternion_to_matrix(q):
     return R
 
 
-# def quaternion_to_matrix(
-#     quaternions: Float[Tensor, "*batch 4"],
-#     eps: float = 1e-8,
-# ) -> Float[Tensor, "*batch 3 3"]:
-#     # Order changed to match scipy format!
-#     r, i, j, k = torch.unbind(quaternions, dim=-1)
-#     two_s = 2 / ((quaternions * quaternions).sum(dim=-1) + eps)
-
-#     o = torch.stack(
-#         (
-#             1 - two_s * (j * j + k * k),
-#             two_s * (i * j - k * r),
-#             two_s * (i * k + j * r),
-#             two_s * (i * j + k * r),
-#             1 - two_s * (i * i + k * k),
-#             two_s * (j * k - i * r),
-#             two_s * (i * k - j * r),
-#             two_s * (j * k + i * r),
-#             1 - two_s * (i * i + j * j),
-#         ),
-#         -1,
-#     )
-#     return rearrange(o, "... (i j) -> ... i j", i=3, j=3)
-
-
 def _standardize_quaternion(quaternions: torch.Tensor) -> torch.Tensor:
     """
     Convert a unit quaternion to a standard form: one in which the real
@@ -545,22 +371,6 @@ def matrix_to_quaternion(matrix: torch.Tensor) -> torch.Tensor:
         F.one_hot(q_abs.argmax(dim=-1), num_classes=4) > 0.5, :
     ].reshape(batch_dim + (4,))
     return _standardize_quaternion(out)
-
-
-def build_covariance(
-    scale: Float[Tensor, "*#batch 3"],
-    rotation_xyzw: Float[Tensor, "*#batch 4"],
-) -> Float[Tensor, "*batch 3 3"]:
-    """calculate covariance matrix from scale and quaternion"""
-
-    scale = scale.diag_embed()
-    rotation = quaternion_to_matrix(rotation_xyzw)
-    return (
-        rotation
-        @ scale
-        @ rearrange(scale, "... i j -> ... j i")
-        @ rearrange(rotation, "... i j -> ... j i")
-    )
 
 
 def sample_image_grid(
@@ -672,40 +482,6 @@ def unproject(
     return ray_directions * z[..., None]
 
 
-# def normal2rotation(normals):
-#     u_batch = normals
-#     u_norm = np.linalg.norm(u_batch, axis=1, keepdims=True)
-#     u_batch = u_batch / u_norm
-
-#     # Choose an arbitrary vector that is not parallel to u_batch
-#     v = np.array([0.0, 0.0, 1.0])
-#     v_batch = np.tile(v, (u_batch.shape[0], 1))
-
-#     # Check if any u_batch vectors are parallel to (0, 0, 1) and handle them
-#     parallel_mask = np.allclose(u_batch, v_batch, atol=1e-6)
-#     v_batch[parallel_mask] = np.array([0.0, 1.0, 0.0])
-
-#     # Compute the cross product to get perpendicular vectors
-#     v2_batch = np.cross(u_batch, v_batch)
-
-#     # Normalize the perpendicular vectors
-#     v2_norm = np.linalg.norm(v2_batch, axis=1, keepdims=True)
-#     v2_batch = v2_batch / v2_norm
-
-#     # Compute the cross product to get the third vectors
-#     v3_batch = np.cross(u_batch, v2_batch)
-
-#     # Normalize the third vectors
-#     v3_norm = np.linalg.norm(v3_batch, axis=1, keepdims=True)
-#     v3_batch = v3_batch / v3_norm
-
-#     stacked = np.column_stack((u_batch, v2_batch, v3_batch))
-
-
-#     # Reshape to get the desired (N, 3, 3) shape
-#     return stacked.reshape(u_batch.shape[0], u_batch.shape[1], -1)
-
-
 def normal2rotation(z):
     batch_size = z.shape[0]
     z = z / z.norm(dim=1, keepdim=True)
@@ -726,34 +502,6 @@ def normal2rotation(z):
     rotation = torch.stack([x, y, z], dim=-1)
     q = rotmat2quaternion(rotation)
     return q, rotation
-
-
-# def normal2rotation(n):
-#     # construct a random rotation matrix from normal
-#     # it would better be positive definite and orthogonal
-#     n = torch.nn.functional.normalize(n)
-#     # w0 = torch.rand_like(n)
-#     w0 = torch.tensor([[1, 0, 0]]).expand(n.shape)
-#     R0 = w0 - torch.sum(w0 * n, -1, True) * n
-#     R0 *= torch.sign(R0[:, :1])
-#     R0 = torch.nn.functional.normalize(R0)
-#     R1 = torch.cross(n, R0)
-
-#     # i = 7859
-#     # print(R1[i])
-#     R1 *= torch.sign(R1[:, 1:2]) * torch.sign(n[:, 2:])
-#     # print(R1[i])
-#     R = torch.stack([R0, R1, n], -1)
-#     # print(R[i], torch.det(R).sum(), torch.trace(R[i]))
-#     q = rotmat2quaternion(R)
-#     # print(q[i], torch.norm(q[i]))
-#     # R = quaternion2rotmat(q)
-#     # print(R[i])
-#     # for i in range(len(q)):
-#     #     if torch.isnan(q[i].sum()):
-#     #         print(i)
-#     # exit()
-#     return q
 
 
 def quaternion2rotmat(q):
@@ -881,46 +629,6 @@ def voxel_downsample(point_cloud, voxel_size=0.02, num_points_per_voxel=1):
     return selected_indices
 
 
-# def voxel_downsample(point_cloud, voxel_size=0.01, num_points_per_voxel=1):
-#     # Step 1: Compute voxel indices for each point
-#     voxel_indices = torch.floor(point_cloud / voxel_size).int()
-
-#     # Step 2: Compute unique voxel indices and their corresponding counts
-#     unique_voxel_indices, inverse_indices = torch.unique(
-#         voxel_indices, return_inverse=True, dim=0
-#     )
-
-#     rand_indices = torch.randperm(inverse_indices.size(0))
-#     shuffled_inverse_indices = inverse_indices[rand_indices]
-
-#     selected_indices = torch.zeros(unique_voxel_indices.shape[0], dtype=torch.long)
-#     selected_indices[shuffled_inverse_indices] = rand_indices
-
-#     # Ensure only unique indices are selected
-#     selected_indices = selected_indices.unique()
-#     return selected_indices
-
-# # Step 4: Create a mask to filter out points from overpopulated voxels
-# # Randomly permute points within each voxel group
-# perm = torch.randperm(inverse_indices.size(0))
-# inverse_indices = inverse_indices[perm]
-
-# # Gather the top num_points_per_voxel points per voxel
-# cumulative_counts = torch.cumsum(voxel_counts, 0)
-# select_indices = (
-#     cumulative_counts.unsqueeze(1) - torch.arange(num_points_per_voxel)
-# ).flatten()
-# select_mask = (select_indices >= 0) & (select_indices < inverse_indices.size(0))
-
-# # Get valid indices
-# valid_indices = perm[select_indices[select_mask]].long()
-
-# Step 5: Return the downsampled point cloud
-# downsampled_points = point_cloud[valid_indices]
-
-# return valid_indices
-
-
 def get_fov(intrinsics: Float[Tensor, "batch 3 3"]) -> Float[Tensor, "batch 2"]:
     intrinsics_inv = intrinsics.inverse()
 
@@ -936,184 +644,6 @@ def get_fov(intrinsics: Float[Tensor, "batch 3 3"]) -> Float[Tensor, "batch 2"]:
     fov_x = (left * right).sum(dim=-1).acos()
     fov_y = (top * bottom).sum(dim=-1).acos()
     return torch.stack((fov_x, fov_y), dim=-1)
-
-
-# def check_in_frustum(posiotions, extrinsic, intrinsic, near_far):
-#     near, far = near_far
-#     fov_x, fov_y = get_fov(intrinsic).unbind(dim=-1)
-#     projection_matrix = get_projection_matrix(near, far, fov_x, fov_y)
-#     projection_matrix = rearrange(projection_matrix, "b i j -> b j i")
-#     view_matrix = rearrange(extrinsic.inverse(), "b i j -> b j i")
-#     return in_frustum(posiotions, projection_matrix[0], view_matrix[0])
-
-
-# import time
-
-
-# def render_cuda(
-#     extrinsics: Float[Tensor, "batch 4 4"],
-#     intrinsics: Float[Tensor, "batch 3 3"],
-#     near: Float[Tensor, " batch"],
-#     far: Float[Tensor, " batch"],
-#     image_shape: tuple[int, int],
-#     background_color: Float[Tensor, "3"],
-#     gaussian_means: Float[Tensor, "gaussian 3"],
-#     gaussian_sh_coefficients: Float[Tensor, "gaussian 3 d_sh"],
-#     gaussian_opacities: Float[Tensor, "gaussian"],
-#     gaussian_confidences: Float[Tensor, "gaussian"],
-#     gaussian_scales,
-#     gaussian_rotations,
-#     gaussian_normals,
-#     scale_invariant: bool = False,
-#     front_only=False,
-#     require_importance: bool = False,
-#     use_sh: bool = False,
-#     render_masks=None,
-#     weight_thres=0.1,
-# ) -> Float[Tensor, "batch 3 height width"]:
-#     """main interface to cuda forward rendering kernel"""
-#     assert use_sh or gaussian_sh_coefficients.shape[-1] == 1
-#     t1 = time.time()
-#     front_config = 0.0
-#     if front_only:
-#         front_config = 1.0
-
-#     importance_config = 0.0
-#     if require_importance:
-#         importance_config = 1.0
-
-#     # Make sure everything is in a range where numerical issues don't appear.
-#     device = gaussian_means.device
-#     scale = torch.ones_like(near)
-#     if scale_invariant:
-#         scale = scale / near
-#         near = near * scale
-#         far = far * scale
-#         scale = scale.unsqueeze(-1)
-#         extrinsics = extrinsics.clone()
-#         extrinsics[..., :3, 3] = extrinsics[..., :3, 3] * scale
-#         gaussian_scales = gaussian_scales * scale
-#         gaussian_means = gaussian_means * scale
-
-#     num_gaussians, _, n = gaussian_sh_coefficients.shape
-#     degree = isqrt(n) - 1
-#     shs = rearrange(gaussian_sh_coefficients, "g xyz n -> g n xyz").contiguous()
-
-#     b, _, _ = extrinsics.shape
-#     h, w = image_shape
-
-#     fov_x, fov_y = get_fov(intrinsics).unbind(dim=-1)
-#     tan_fov_x = (0.5 * fov_x).tan()
-#     tan_fov_y = (0.5 * fov_y).tan()
-
-#     xy_ray, _ = sample_image_grid((h, w))
-#     xy_ray = rearrange(xy_ray, "h w xy -> (h w) () xy").to(intrinsics.device)
-#     directions = unproject(
-#         xy_ray,
-#         torch.ones_like(xy_ray[..., 0]),
-#         intrinsics,
-#     ).view(h, w, -1, 3)
-#     raydir_maps = torch.nn.functional.normalize(directions, dim=-1).to(device)
-#     raydir_maps = raydir_maps.permute(2, 3, 0, 1)  # B 3 H W
-#     # print(raydir_maps.shape)
-
-#     projection_matrix = get_projection_matrix(near, far, fov_x, fov_y)
-#     projection_matrix = rearrange(projection_matrix, "b i j -> b j i")
-#     view_matrix = rearrange(extrinsics.inverse(), "b i j -> b j i")
-#     full_projection = view_matrix @ projection_matrix
-#     t2 = time.time()
-
-#     all_rgbs = torch.empty(b, 3, h, w, device=device)
-#     all_depths = torch.empty(b, 1, h, w, device=device)
-#     all_d2ns = torch.empty(b, 3, h, w, device=device)
-#     all_normals = torch.empty(b, 3, h, w, device=device)
-#     all_opacities = torch.empty(b, 1, h, w, device=device)
-#     all_confidences = torch.empty(b, 1, h, w, device=device)
-#     all_importances = torch.zeros(b, num_gaussians, device=device)
-#     all_counts = torch.zeros(b, num_gaussians, device=device, dtype=torch.int32)
-
-#     for i in range(b):
-#         # Set up a tensor for the gradients of the screen-space means.
-#         means_2d = torch.zeros_like(gaussian_means, requires_grad=True)
-#         try:
-#             means_2d.retain_grad()
-#         except Exception:
-#             pass
-
-#         settings = GaussianRasterizationSettings(
-#             image_height=h,
-#             image_width=w,
-#             tanfovx=tan_fov_x[i].item(),
-#             tanfovy=tan_fov_y[i].item(),
-#             bg=background_color,
-#             scale_modifier=1.0,
-#             viewmatrix=view_matrix[i],
-#             projmatrix=full_projection[i],
-#             sh_degree=degree,
-#             campos=extrinsics[i, :3, 3],
-#             prefiltered=False,  # This matches the original usage.
-#             render_mask=(
-#                 render_masks[i]
-#                 if render_masks is not None
-#                 else torch.tensor([]).to(device)
-#             ),
-#             weight_thres=weight_thres,
-#             debug=False,
-#             config=torch.tensor([1.0, 1.0, 1.0, importance_config, front_config]).to(
-#                 device
-#             ),
-#         )
-#         rasterizer = GaussianRasterizer(settings)
-#         rgb, normal, depth, opacity, confidence, importance, count = rasterizer(
-#             means3D=gaussian_means,
-#             means2D=means_2d,
-#             opacities=gaussian_opacities[..., None],
-#             confidences=gaussian_confidences,
-#             shs=shs if use_sh else None,
-#             colors_precomp=None if use_sh else shs[:, 0, :],
-#             scales=gaussian_scales,
-#             rotations=gaussian_rotations,
-#             cov3D_precomp=None,  # gaussian_covariances[:, row, col],
-#         )
-#         mask = opacity.detach() > 1e-2
-#         normal = torch.nn.functional.normalize(normal, dim=0) * mask
-#         visible_mask = torch.sum(normal * raydir_maps[i], dim=0) < 0.0
-#         confidence *= visible_mask.long()
-#         # pdb.set_trace()
-#         d2n = depth2normal(depth, mask, [fov_x[0], fov_y[0]])
-#         all_d2ns[i] = d2n
-
-#         # uncertainty_depth = uncertainty[:1, ...]  # depth
-#         # uncertainty = 1 - torch.sum(d2n * normal, dim=0, keepdim=True)
-#         # uncertainty_normal = uncertainty[1:2, ...]  # normal
-#         # uncertainty = uncertainty_depth + uncertainty_normal
-#         # uncertainty_rgb = uncertainty[2:, ...]  # rgb
-#         # uncertainty = uncertainty_normal + uncertainty_rgb
-#         # uncertainty = torch.sum(uncertainty, dim=0, keepdim=True)
-#         # uncertainty = (uncertainty[0, ...] + uncertainty[2, ...]).unsqueeze(0)
-#         # uncertainty[test_mask.unsqueeze(0)] = 1
-#         # all_uncertainties[i] = torch.clamp(uncertainty, min=0, max=1)
-
-#         all_rgbs[i] = rgb
-#         all_normals[i] = normal
-#         all_depths[i] = depth / scale[i]
-#         all_opacities[i] = opacity
-#         all_confidences[i] = confidence
-#         all_importances[i] = importance
-#         all_counts[i] = count
-#     t3 = time.time()
-#     print("render time:", (t2 - t1) / (t3 - t1), (t3 - t2) / (t3 - t1))
-
-#     return (
-#         all_rgbs,
-#         all_depths,
-#         all_normals,
-#         all_opacities,
-#         all_d2ns,
-#         all_confidences,
-#         all_importances,
-#         all_counts,
-#     )
 
 
 def render_cuda_core(

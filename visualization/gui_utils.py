@@ -9,11 +9,8 @@ import math
 from einops import repeat
 import pdb
 import matplotlib.pyplot as plt
+from scipy.special import comb
 
-# from gaussian_splatting.utils.general_utils import (
-#     build_scaling_rotation,
-#     strip_symmetric,
-# )
 
 cv_gl = np.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
 gl_cv = np.linalg.inv(cv_gl)
@@ -52,9 +49,6 @@ class Frustum:
         self.center = center
         self.eye = eye
         self.up = up
-
-
-from scipy.special import comb
 
 
 def bezier_curve(control_points, num_points=100):
@@ -168,73 +162,6 @@ def create_frustum(pose, frusutum_color=[0, 1, 0], size=0.02):
     return frustum
 
 
-# class GaussianPacket:
-#     def __init__(
-#         self,
-#         gaussians=None,
-#         keyframe=None,
-#         current_frame=None,
-#         gtcolor=None,
-#         gtdepth=None,
-#         gtnormal=None,
-#         keyframes=None,
-#         finish=False,
-#         kf_window=None,
-#     ):
-#         self.has_gaussians = False
-#         if gaussians is not None:
-#             self.has_gaussians = True
-#             self.get_xyz = gaussians.get_xyz.detach().clone()
-#             self.active_sh_degree = gaussians.active_sh_degree
-#             self.get_opacity = gaussians.get_opacity.detach().clone()
-#             self.get_scaling = gaussians.get_scaling.detach().clone()
-#             self.get_rotation = gaussians.get_rotation.detach().clone()
-#             self.max_sh_degree = gaussians.max_sh_degree
-#             self.get_features = gaussians.get_features.detach().clone()
-
-#             self._rotation = gaussians._rotation.detach().clone()
-#             self.rotation_activation = torch.nn.functional.normalize
-#             self.unique_kfIDs = gaussians.unique_kfIDs.clone()
-#             self.n_obs = gaussians.n_obs.clone()
-
-#         self.keyframe = keyframe
-#         self.current_frame = current_frame
-#         self.gtcolor = self.resize_img(gtcolor, 320)
-#         self.gtdepth = self.resize_img(gtdepth, 320)
-#         self.gtnormal = self.resize_img(gtnormal, 320)
-#         self.keyframes = keyframes
-#         self.finish = finish
-#         self.kf_window = kf_window
-
-#     def resize_img(self, img, width):
-#         if img is None:
-#             return None
-
-#         # check if img is numpy
-#         if isinstance(img, np.ndarray):
-#             height = int(width * img.shape[0] / img.shape[1])
-#             return cv2.resize(img, (width, height))
-#         height = int(width * img.shape[1] / img.shape[2])
-#         # img is 3xHxW
-#         img = torch.nn.functional.interpolate(
-#             img.unsqueeze(0), size=(height, width), mode="bilinear", align_corners=False
-#         )
-#         return img.squeeze(0)
-
-#     def get_covariance(self, scaling_modifier=1):
-#         return self.build_covariance_from_scaling_rotation(
-#             self.get_scaling, scaling_modifier, self._rotation
-#         )
-
-#     def build_covariance_from_scaling_rotation(
-#         self, scaling, scaling_modifier, rotation
-#     ):
-#         L = build_scaling_rotation(scaling_modifier * scaling, rotation)
-#         actual_covariance = L @ L.transpose(1, 2)
-#         symm = strip_symmetric(actual_covariance)
-#         return symm
-
-
 def get_latest_queue(q):
     message = None
     while True:
@@ -256,7 +183,6 @@ class Packet_vis2main:
 def getWorld2View2(R, t, translate=torch.tensor([0.0, 0.0, 0.0]), scale=1.0):
     translate = translate.to(R.device)
     Rt = torch.zeros((4, 4), device=R.device)
-    # Rt[:3, :3] = R.transpose()
     Rt[:3, :3] = R
     Rt[:3, 3] = t
     Rt[3, 3] = 1.0
