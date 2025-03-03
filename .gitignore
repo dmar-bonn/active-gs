@@ -165,6 +165,7 @@ cython_debug/
 /data/*
 !/data/
 !/data/replica_download.sh
+!/data/replica_example.sh
 /simulator/habitat-sim
 /dataset_cache
 

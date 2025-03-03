@@ -19,17 +19,32 @@ git clone git@github.com:dmar-bonn/active-gs.git
 cd active-gs
 ```
 
-Create environment:
+(optional) For different CUDA versions in your machine, you might need to change the corresponding pytorch version and source in envs/build.sh:
+```
+# for example for CUDA 12.1, change the source. 
+pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu121
+
+# you can find more compatible version on https://pytorch.org/get-started/previous-versions/
+```
+Create and activate environment:
 ```
 bash envs/build.sh
-```
-For different CUDA versions, you might need to change the corresponding pytorch source in build.sh.
-
-Download Replica dataset:
-```
-bash data/replica_download.sh
 conda activate active-gs
 ```
+
+## Data
+
+Download full Replica dataset:
+```
+bash data/replica_download.sh
+```
+
+(optional) If you only want to quickly try one example, rather than the whole dataset, use:
+```
+bash data/replica_example.sh
+```
+This will only download office0 scene.
+
 ## Run
 Run online mission:
 ```
