@@ -23,5 +23,5 @@ for scene in $scene_list; do
             python eval.py planner=$planner scene=$scene test_folder=dataset/$scene experiment.exp_id=$exp_id experiment.run_id=$run
         done
     done
-    python utils/plot.py --data_folder $exp_folder/$exp_id/$dataset/$scene
+    python utils/plot.py --data_folder $exp_folder/$exp_id/$scene
 done

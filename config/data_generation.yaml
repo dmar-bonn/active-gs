@@ -13,7 +13,7 @@ hydra:
     dir: .
 
 use_gui: false
-save_pose_only: false
+save_pose_only: true
 max_iter: 1000
 converged_step: 20
 num_views: 1000
