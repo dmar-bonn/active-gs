@@ -1,3 +1,4 @@
+mapper_type: incremental
 # mapper setup
 use_voxel_filter: False
 

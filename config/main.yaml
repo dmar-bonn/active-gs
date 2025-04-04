@@ -1,6 +1,6 @@
 defaults:
-  - mapper: incremental
   - planner: random
+  - mapper: incremental
   - simulator: habitat
   - scene: replica/office0
   - gui: gui
@@ -23,7 +23,3 @@ experiment:
 
 use_gui: true
 debug: false
-
-
-
-

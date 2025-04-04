@@ -1,3 +1,4 @@
+mapper_type: incremental_ablation
 # mapper setup
 use_voxel_filter: False
 
@@ -29,9 +30,3 @@ gaussian_map:
     opacity_lr: 0.01
     scale_lr : 0.01
     harmonic_lr: 0.0001
-    ssim_weight: 0.2
-    geo_weight: 1
-    op_weight: 0.5
-    scale_weight: 0.5
-    grad_thres: 1.0e-4
-    op_thres: 0.5
