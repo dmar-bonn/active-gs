@@ -168,7 +168,7 @@ class GUI:
         self.pause_button.set_on_clicked(self._on_pause_button)
         self.button_tile.add_child(self.pause_button)
 
-        self.record_button = gui.ToggleSwitch("Record/Stop")
+        self.record_button = gui.ToggleSwitch("Stop/Record")
         self.record_button.is_on = False
         self.record_button.set_on_clicked(self._on_record_button)
         self.button_tile.add_child(self.record_button)

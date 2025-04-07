@@ -60,7 +60,12 @@ To visualize the built GS map:
 python visualize.py -G PATH_TO_GS_MAP
 ```
 ## How to use GUI? 
-TODO
+1. Resume/Pause: click to stop or continue online mission.
+2. Record/Stop: click to enter camera path recording mode. Any movement of the camera will be recorded and saved in outputs_gui/saved_paths. You can set the ID of camera path to be recorded by choosing number from "Camera Path" and click reset to delete. Click "Fly" in "Camera Follow Options" to control the camera via keyboard (WASD and direction keys). 
+3. Camera Pose: You can save individual camera pose by selecting ID of the camera pose and then clicking "Save". Similarly, click "Load" to move the camera to saved camera poses.
+4. History Views: move the camera to planned history viewpoints.
+5. 3D Objects: click to visualize 3D objects. You can see different submaps in "Voxel Map". "Mesh" is only available if corresponding mesh is also loaded.
+6. Rendering Options: click to show rendering results from Gaussian Splatting map. Only one rendering type among "Depth", "Confidence", "Opacity", "Normal" and "D2N" can be visualized at the same time.
 ## Evaluation
 For rendering evaluation, you need to first generate test views for each scene:
 ```
@@ -87,7 +92,7 @@ python eval.py planner=PLANNER_TYPE scene=SCENE_NAME test_folder=TEST_FOLDER
 
 We also provide a shell script to run a complete experiment:
 ```
-./run.sh
+bash run.sh
 ```
 
 ## Demo
