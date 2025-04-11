@@ -4,6 +4,18 @@ Liren Jin<sup>1</sup>, Xingguang Zhong<sup>1</sup>, Yue Pan<sup>1</sup>, Jens Be
 
 <sup>1</sup> University of Bonn, <sup>2</sup> TU Delft
 
+```commandline
+@article{jin2025ral,
+author      = {Jin, Liren and Zhong, Xingguang and Pan, Yue and Behley, Jens and Stachniss, Cyrill and Popović, Marija},
+journal     = {IEEE Robotics and Automation Letters}, 
+title       = {{ActiveGS: Active Scene Reconstruction Using Gaussian Splatting}}, 
+year        = {2025},
+volume      = {10},
+number      = {5},
+pages       = {4866-4873},
+doi         = {10.1109/LRA.2025.3555149}}
+```
+
 <a target="_blank" href="https://arxiv.org/abs/2412.17769">
     <img src="https://img.shields.io/badge/arXiv-2412.17769-b31b1b.svg" alt="arXiv Paper">
 </a>
