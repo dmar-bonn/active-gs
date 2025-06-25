@@ -104,7 +104,7 @@ class PlanBase:
             waypoints = voxel_map.index_2_xyz(wp_indices).cpu()
 
         else:
-            # move to closest voxel center as inital position
+            # move to closest voxel center as initial position
             nbv = torch.eye(4)
             nbv[:3, :3] = self.pose[:3, :3]
             nbv_index = voxel_map.xyz_2_index(self.pose[:3, 3])
